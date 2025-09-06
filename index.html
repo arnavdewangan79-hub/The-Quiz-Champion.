@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Quiz Champion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #gameContainer {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #firstScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 15px;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        #firstScreen h2 {
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3)); }
+            to { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)); }
+        }
+
+        #firstScreen h3 {
+            color: #4ecdc4;
+            font-size: 1.2em;
+            margin-bottom: 8px;
+        }
+
+        #firstScreen h4 {
+            color: #ccc;
+            font-size: 0.95em;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+
+        .game-button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 8px;
+            min-height: 50px;
+            touch-action: manipulation;
+        }
+
+        .game-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 3px 10px rgba(255, 107, 107, 0.4);
+        }
+
+        #gameScreen {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+
+        #gameStatus {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            font-size: 16px;
+            color: #fff;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #quizContainer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 80px 15px 20px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        #questionContainer {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #questionText {
+            font-size: 1.1em;
+            line-height: 1.4;
+            color: #fff;
+            margin: 0;
+        }
+
+        #answersContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .answer-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            color: #fff;
+            padding: 16px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            touch-action: manipulation;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .answer-button:active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #4ecdc4;
+            transform: scale(0.98);
+        }
+
+        .answer-button.correct {
+            background: rgba(76, 175, 80, 0.4);
+            border-color: #4caf50;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .answer-button.incorrect {
+            background: rgba(244, 67, 54, 0.4);
+            border-color: #f44336;
+        }
+
+        .answer-button.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        #feedbackContainer {
+            text-align: center;
+            min-height: 80px;
+            padding: 0 10px;
+        }
+
+        #feedback {
+            font-size: 1em;
+            margin-bottom: 15px;
+            font-weight: bold;
+            line-height: 1.3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            margin: 10% auto;
+            padding: 30px 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            margin-bottom: 12px;
+            color: #ccc;
+            line-height: 1.3;
+        }
+
+        .quiz-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .question-number {
+            font-size: 0.9em;
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        /* Landscape orientation styles */
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            #quizContainer {
+                padding: 60px 15px 15px;
+            }
+            
+            #questionContainer {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            #questionText {
+                font-size: 1em;
+            }
+            
+            .answer-button {
+                min-height: 50px;
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            #answersContainer {
+                gap: 8px;
+            }
+        }
+
+        /* Very small screens */
+        @media (max-width: 360px) {
+            #firstScreen h2 {
+                font-size: 1.8em;
+            }
+            
+            #firstScreen h3 {
+                font-size: 1.1em;
+            }
+            
+            #firstScreen h4 {
+                font-size: 0.9em;
+            }
+            
+            .game-button {
+                padding: 14px 28px;
+                font-size: 15px;
+            }
+            
+            #questionText {
+                font-size: 1em;
+            }
+            
+            .answer-button {
+                font-size: 14px;
+                padding: 14px;
+            }
+        }
+
+        /* Safe area handling for phones with notches */
+        @supports(padding: max(0px)) {
+            #gameStatus {
+                top: max(10px, env(safe-area-inset-top));
+                left: max(10px, env(safe-area-inset-left));
+                right: max(10px, env(safe-area-inset-right));
+            }
+            
+            #quizContainer {
+                padding-top: max(80px, calc(60px + env(safe-area-inset-top)));
+                padding-left: max(15px, env(safe-area-inset-left));
+                padding-right: max(15px, env(safe-area-inset-right));
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+            
+            #firstScreen {
+                padding: max(15px, env(safe-area-inset-top)) max(15px, env(safe-area-inset-right)) max(15px, env(safe-area-inset-bottom)) max(15px, env(safe-area-inset-left));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <!-- First Screen -->
+        <div id="firstScreen">
+            <svg class="quiz-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff6b6b"/>
+                        <stop offset="50%" style="stop-color:#4ecdc4"/>
+                        <stop offset="100%" style="stop-color:#45b7d1"/>
+                    </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="45" fill="url(#iconGradient)" stroke="#fff" stroke-width="2"/>
+                <text x="50" y="60" text-anchor="middle" fill="#fff" font-size="36" font-weight="bold">?</text>
+            </svg>
+            
+            <h2>Quiz Champion</h2>
+            
+            <h3>Game Introduction</h3>
+            <h4>Test your knowledge across multiple categories including Science, History, Sports, Movies, and General Knowledge. Each correct answer earns you points while wrong answers won't affect your score.</h4>
+            
+            <h3>How to Play</h3>
+            <h4>Read each question carefully and tap one of the four answer options. You'll receive immediate feedback on whether your answer is correct. Try to answer as many questions correctly as possible!</h4>
+            
+            <button id="startButton" class="game-button">Start Game</button>
+        </div>
+
+        <!-- Second Screen (Game) -->
+        <div id="gameScreen" style="display: none;">
+            <!-- Game Status -->
+            <div id="gameStatus">
+                <div>
+                    <div class="question-number">Question <span id="questionNumber">1</span> of 10</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div>Score: <span id="score">0</span></div>
+                    <div style="font-size: 0.9em; color: #4ecdc4;"><span id="category">General Knowledge</span></div>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div id="quizContainer">
+                <div id="questionContainer">
+                    <h3 id="questionText">Loading question...</h3>
+                </div>
+                
+                <div id="answersContainer">
+                    <button class="answer-button" data-answer="0"></button>
+                    <button class="answer-button" data-answer="1"></button>
+                    <button class="answer-button" data-answer="2"></button>
+                    <button class="answer-button" data-answer="3"></button>
+                </div>
+                
+                <div id="feedbackContainer">
+                    <p id="feedback"></p>
+                    <button id="nextButton" class="game-button" style="display: none;">Next Question</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameOverModal" class="modal">
+            <div class="modal-content">
+                <svg class="quiz-icon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="trophyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#ffd700"/>
+                            <stop offset="100%" style="stop-color:#ffaa00"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M30 25 L70 25 L70 45 Q70 55 60 55 L40 55 Q30 55 30 45 Z" fill="url(#trophyGradient)" stroke="#fff" stroke-width="2"/>
+                    <rect x="45" y="55" width="10" height="15" fill="url(#trophyGradient)" stroke="#fff" stroke-width="2"/>
+                    <rect x="35" y="70" width="30" height="8" rx="4" fill="url(#trophyGradient)" stroke="#fff" stroke-width="2"/>
+                    <circle cx="25" cy="35" r="8" fill="none" stroke="url(#trophyGradient)" stroke-width="3"/>
+                    <circle cx="75" cy="35" r="8" fill="none" stroke="url(#trophyGradient)" stroke-width="3"/>
+                </svg>
+                
+                <h2>Game Over!</h2>
+                <p>Your final score: <span id="finalScore">0</span>/10</p>
+                <p id="performanceMessage"></p>
+                <button id="playAgainButton" class="game-button">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class QuizGame {
+            constructor() {
+                this.currentQuestionIndex = 0;
+                this.score = 0;
+                this.questions = [];
+                this.questionBank = [];
+                this.isAnswered = false;
+                this.totalQuestions = 10;
+                
+                this.initializeQuestionBank();
+                this.generateQuestions();
+                this.bindEvents();
+            }
+
+            initializeQuestionBank() {
+                this.questionBank = [
+                    // Science Questions
+                    {
+                        category: "Science",
+                        question: "What is the chemical symbol for gold?",
+                        answers: ["Go", "Gd", "Au", "Ag"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the speed of light in vacuum?",
+                        answers: ["299,792,458 m/s", "300,000,000 m/s", "299,000,000 m/s", "298,792,458 m/s"],
+                        correct: 0
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the hardest natural substance on Earth?",
+                        answers: ["Gold", "Iron", "Diamond", "Platinum"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "Which planet is known as the Red Planet?",
+                        answers: ["Venus", "Mars", "Jupiter", "Saturn"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "What gas makes up about 78% of Earth's atmosphere?",
+                        answers: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the chemical formula for water?",
+                        answers: ["CO2", "H2O", "NaCl", "O2"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "How many bones are in an adult human body?",
+                        answers: ["206", "208", "210", "204"],
+                        correct: 0
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the smallest unit of matter?",
+                        answers: ["Molecule", "Atom", "Electron", "Proton"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "Which blood type is known as the universal donor?",
+                        answers: ["A", "B", "AB", "O"],
+                        correct: 3
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the most abundant element in the universe?",
+                        answers: ["Helium", "Hydrogen", "Oxygen", "Carbon"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the pH level of pure water?",
+                        answers: ["6", "7", "8", "9"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "Which scientist developed the theory of relativity?",
+                        answers: ["Isaac Newton", "Albert Einstein", "Stephen Hawking", "Galileo Galilei"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the largest organ in the human body?",
+                        answers: ["Liver", "Brain", "Skin", "Heart"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "How many chambers does a human heart have?",
+                        answers: ["2", "3", "4", "5"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the chemical symbol for sodium?",
+                        answers: ["So", "Na", "Sd", "S"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "Which force keeps planets in orbit around the sun?",
+                        answers: ["Magnetic force", "Nuclear force", "Gravitational force", "Electric force"],
+                        correct: 2
+                    },
+                    {
+                        category: "Science",
+                        question: "What is the freezing point of water in Celsius?",
+                        answers: ["0°C", "-1°C", "1°C", "32°C"],
+                        correct: 0
+                    },
+                    {
+                        category: "Science",
+                        question: "Which part of the cell contains the genetic material?",
+                        answers: ["Cytoplasm", "Nucleus", "Mitochondria", "Cell wall"],
+                        correct: 1
+                    },
+                    {
+                        category: "Science",
+                        question: "What type of radiation is used in X-rays?",
+                        answers: ["Alpha radiation", "Beta radiation", "Gamma radiation", "Electromagnetic radiation"],
+                        correct: 3
+                    },
+                    {
+                        category: "Science",
+                        question: "Which scientist is known for the laws of motion?",
+                        answers: ["Albert Einstein", "Isaac Newton", "Charles Darwin", "Marie Curie"],
+                        correct: 1
+                    },
+
+                    // History Questions
+                    {
+                        category: "History",
+                        question: "In which year did World War II end?",
+                        answers: ["1944", "1945", "1946", "1947"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Who was the first person to walk on the moon?",
+                        answers: ["Buzz Aldrin", "Neil Armstrong", "John Glenn", "Alan Shepard"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Which ancient wonder of the world was located in Alexandria?",
+                        answers: ["Hanging Gardens", "Colossus of Rhodes", "Lighthouse of Alexandria", "Temple of Artemis"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Who was the first President of the United States?",
+                        answers: ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "In which year did the Berlin Wall fall?",
+                        answers: ["1987", "1988", "1989", "1990"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Which empire was ruled by Julius Caesar?",
+                        answers: ["Greek Empire", "Roman Empire", "Byzantine Empire", "Persian Empire"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "What year did the Titanic sink?",
+                        answers: ["1910", "1911", "1912", "1913"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Who painted the ceiling of the Sistine Chapel?",
+                        answers: ["Leonardo da Vinci", "Raphael", "Michelangelo", "Donatello"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Which country gifted the Statue of Liberty to the United States?",
+                        answers: ["England", "France", "Spain", "Italy"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "What was the name of the ship on which Charles Darwin made his famous voyage?",
+                        answers: ["HMS Victory", "HMS Beagle", "HMS Endeavour", "HMS Discovery"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Who was the first woman to win a Nobel Prize?",
+                        answers: ["Marie Curie", "Mother Teresa", "Jane Addams", "Bertha von Suttner"],
+                        correct: 0
+                    },
+                    {
+                        category: "History",
+                        question: "Which war was fought between the North and South in America?",
+                        answers: ["Revolutionary War", "Civil War", "World War I", "Spanish-American War"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "In which year did the Great Wall of China construction begin?",
+                        answers: ["5th century BC", "7th century BC", "3rd century BC", "1st century BC"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Who was the Egyptian queen who had relationships with Julius Caesar and Mark Antony?",
+                        answers: ["Nefertiti", "Cleopatra", "Hatshepsut", "Ankhesenamun"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Which explorer is credited with discovering America?",
+                        answers: ["Vasco da Gama", "Christopher Columbus", "Ferdinand Magellan", "Marco Polo"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "What year did World War I begin?",
+                        answers: ["1913", "1914", "1915", "1916"],
+                        correct: 1
+                    },
+                    {
+                        category: "History",
+                        question: "Who was the leader of Nazi Germany during World War II?",
+                        answers: ["Heinrich Himmler", "Joseph Goebbels", "Adolf Hitler", "Hermann Göring"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Which ancient civilization built Machu Picchu?",
+                        answers: ["Aztecs", "Mayans", "Incas", "Olmecs"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "In which year did the French Revolution begin?",
+                        answers: ["1787", "1788", "1789", "1790"],
+                        correct: 2
+                    },
+                    {
+                        category: "History",
+                        question: "Who was known as the 'Iron Lady'?",
+                        answers: ["Golda Meir", "Margaret Thatcher", "Indira Gandhi", "Eleanor Roosevelt"],
+                        correct: 1
+                    },
+
+                    // Sports Questions
+                    {
+                        category: "Sports",
+                        question: "How many players are there in a basketball team on the court?",
+                        answers: ["4", "5", "6", "7"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "In which sport would you perform a slam dunk?",
+                        answers: ["Volleyball", "Tennis", "Basketball", "Baseball"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "How often are the Summer Olympic Games held?",
+                        answers: ["Every 2 years", "Every 3 years", "Every 4 years", "Every 5 years"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "In soccer, how many players are on the field for each team?",
+                        answers: ["10", "11", "12", "9"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "What is the maximum score possible in ten-pin bowling?",
+                        answers: ["250", "280", "300", "320"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "Which country has won the most FIFA World Cups?",
+                        answers: ["Germany", "Argentina", "Brazil", "Italy"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "In tennis, what does 'love' mean?",
+                        answers: ["1 point", "15 points", "30 points", "0 points"],
+                        correct: 3
+                    },
+                    {
+                        category: "Sports",
+                        question: "How long is a marathon race?",
+                        answers: ["26.2 miles", "25 miles", "27 miles", "24.2 miles"],
+                        correct: 0
+                    },
+                    {
+                        category: "Sports",
+                        question: "In golf, what is one stroke under par called?",
+                        answers: ["Eagle", "Birdie", "Bogey", "Albatross"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "Which sport is played at Wimbledon?",
+                        answers: ["Golf", "Cricket", "Tennis", "Badminton"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "How many rings are there in the Olympic symbol?",
+                        answers: ["4", "5", "6", "7"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "In baseball, how many strikes result in an out?",
+                        answers: ["2", "3", "4", "5"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "Which sport uses the terms 'spike' and 'dig'?",
+                        answers: ["Basketball", "Volleyball", "Tennis", "Badminton"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "How many holes are played in a standard round of golf?",
+                        answers: ["16", "17", "18", "19"],
+                        correct: 2
+                    },
+                    {
+                        category: "Sports",
+                        question: "In American football, how many points is a touchdown worth?",
+                        answers: ["5", "6", "7", "8"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "Which swimming stroke is performed on the back?",
+                        answers: ["Freestyle", "Breaststroke", "Butterfly", "Backstroke"],
+                        correct: 3
+                    },
+                    {
+                        category: "Sports",
+                        question: "In ice hockey, how many players per team are on the ice at one time?",
+                        answers: ["5", "6", "7", "8"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "What is the term for scoring three goals in one game in soccer?",
+                        answers: ["Triple", "Hat trick", "Treble", "Trinity"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "Which boxer was known as 'The Greatest'?",
+                        answers: ["Mike Tyson", "Muhammad Ali", "Joe Frazier", "George Foreman"],
+                        correct: 1
+                    },
+                    {
+                        category: "Sports",
+                        question: "In which sport would you find a pommel horse?",
+                        answers: ["Track and field", "Gymnastics", "Swimming", "Wrestling"],
+                        correct: 1
+                    },
+
+                    // Movies Questions
+                    {
+                        category: "Movies",
+                        question: "Who directed the movie 'Jaws'?",
+                        answers: ["George Lucas", "Steven Spielberg", "Martin Scorsese", "Francis Ford Coppola"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie won the Academy Award for Best Picture in 1994?",
+                        answers: ["Forrest Gump", "The Lion King", "Pulp Fiction", "The Shawshank Redemption"],
+                        correct: 0
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who played the character of Jack in 'Titanic'?",
+                        answers: ["Brad Pitt", "Leonardo DiCaprio", "Tom Cruise", "Johnny Depp"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie features the line 'May the Force be with you'?",
+                        answers: ["Star Trek", "Star Wars", "Guardians of the Galaxy", "Avatar"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who directed the movie 'Pulp Fiction'?",
+                        answers: ["Martin Scorsese", "Quentin Tarantino", "Steven Spielberg", "Francis Ford Coppola"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which animated movie features the song 'Let It Go'?",
+                        answers: ["Moana", "Frozen", "Tangled", "The Little Mermaid"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "In 'The Matrix', what color pill does Neo take?",
+                        answers: ["Blue", "Red", "Green", "Yellow"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who played the Joker in 'The Dark Knight'?",
+                        answers: ["Joaquin Phoenix", "Jack Nicholson", "Heath Ledger", "Jared Leto"],
+                        correct: 2
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie won the first ever Academy Award for Best Picture?",
+                        answers: ["Wings", "Sunrise", "The Jazz Singer", "7th Heaven"],
+                        correct: 0
+                    },
+                    {
+                        category: "Movies",
+                        question: "What is the highest-grossing film of all time (as of 2023)?",
+                        answers: ["Titanic", "Avatar", "Avengers: Endgame", "Star Wars: The Force Awakens"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who played Forrest Gump?",
+                        answers: ["Tom Cruise", "Tom Hanks", "Brad Pitt", "Will Smith"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie features the quote 'Here's looking at you, kid'?",
+                        answers: ["Gone with the Wind", "Casablanca", "The Maltese Falcon", "Citizen Kane"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who directed 'The Godfather'?",
+                        answers: ["Martin Scorsese", "Francis Ford Coppola", "Steven Spielberg", "George Lucas"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which actress played Hermione Granger in the Harry Potter films?",
+                        answers: ["Emma Stone", "Emma Watson", "Emma Roberts", "Emily Blunt"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "What is the name of the coffee shop in the TV show 'Friends'?",
+                        answers: ["Central Perk", "Coffee Central", "The Daily Grind", "Bean There"],
+                        correct: 0
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who composed the music for 'Jaws'?",
+                        answers: ["Hans Zimmer", "John Williams", "Danny Elfman", "James Horner"],
+                        correct: 1
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie features the character Woody?",
+                        answers: ["Finding Nemo", "Monsters Inc.", "Toy Story", "Cars"],
+                        correct: 2
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who played the main character in 'Rocky'?",
+                        answers: ["Robert De Niro", "Al Pacino", "Sylvester Stallone", "Arnold Schwarzenegger"],
+                        correct: 2
+                    },
+                    {
+                        category: "Movies",
+                        question: "Which movie features the song 'My Heart Will Go On'?",
+                        answers: ["Ghost", "Dirty Dancing", "Titanic", "The Bodyguard"],
+                        correct: 2
+                    },
+                    {
+                        category: "Movies",
+                        question: "Who directed 'E.T. the Extra-Terrestrial'?",
+                        answers: ["George Lucas", "Steven Spielberg", "James Cameron", "Ridley Scott"],
+                        correct: 1
+                    },
+
+                    // General Knowledge Questions
+                    {
+                        category: "General Knowledge",
+                        question: "What is the largest planet in our solar system?",
+                        answers: ["Saturn", "Neptune", "Jupiter", "Uranus"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the capital of Australia?",
+                        answers: ["Sydney", "Melbourne", "Canberra", "Perth"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which is the longest river in the world?",
+                        answers: ["Amazon", "Nile", "Mississippi", "Yangtze"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the smallest country in the world?",
+                        answers: ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which language has the most native speakers worldwide?",
+                        answers: ["English", "Spanish", "Mandarin Chinese", "Hindi"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the tallest mountain in the world?",
+                        answers: ["K2", "Mount Everest", "Kangchenjunga", "Lhotse"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which ocean is the largest?",
+                        answers: ["Atlantic", "Indian", "Pacific", "Arctic"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the most spoken language in South America?",
+                        answers: ["Spanish", "Portuguese", "English", "French"],
+                        correct: 0
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which country has the most time zones?",
+                        answers: ["Russia", "United States", "China", "France"],
+                        correct: 3
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the currency of Japan?",
+                        answers: ["Yuan", "Won", "Yen", "Ringgit"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "How many continents are there?",
+                        answers: ["5", "6", "7", "8"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which vitamin is produced when skin is exposed to sunlight?",
+                        answers: ["Vitamin A", "Vitamin B", "Vitamin C", "Vitamin D"],
+                        correct: 3
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the largest mammal in the world?",
+                        answers: ["African Elephant", "Blue Whale", "Giraffe", "Hippopotamus"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which planet is closest to the Sun?",
+                        answers: ["Venus", "Earth", "Mercury", "Mars"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the study of earthquakes called?",
+                        answers: ["Geology", "Seismology", "Meteorology", "Oceanography"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "How many sides does a hexagon have?",
+                        answers: ["5", "6", "7", "8"],
+                        correct: 1
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the largest desert in the world?",
+                        answers: ["Sahara", "Gobi", "Antarctica", "Arabian"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which gas do plants absorb from the atmosphere during photosynthesis?",
+                        answers: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "What is the hardest rock?",
+                        answers: ["Granite", "Marble", "Diamond", "Quartz"],
+                        correct: 2
+                    },
+                    {
+                        category: "General Knowledge",
+                        question: "Which animal is known as the 'King of the Jungle'?",
+                        answers: ["Tiger", "Lion", "Leopard", "Cheetah"],
+                        correct: 1
+                    },
+
+                    // Geography Questions
+                    {
+                        category: "Geography",
+                        question: "Which desert is the largest in the world?",
+                        answers: ["Sahara", "Gobi", "Antarctica", "Arabian"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the capital of Canada?",
+                        answers: ["Toronto", "Vancouver", "Ottawa", "Montreal"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which continent has the most countries?",
+                        answers: ["Asia", "Africa", "Europe", "South America"],
+                        correct: 1
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the deepest point on Earth?",
+                        answers: ["Puerto Rico Trench", "Java Trench", "Mariana Trench", "Peru-Chile Trench"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which country is both in Europe and Asia?",
+                        answers: ["Russia", "Turkey", "Kazakhstan", "All of the above"],
+                        correct: 3
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the capital of Brazil?",
+                        answers: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which African country was never colonized?",
+                        answers: ["Morocco", "Ethiopia", "Egypt", "South Africa"],
+                        correct: 1
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the smallest continent by land area?",
+                        answers: ["Europe", "Antarctica", "Australia", "South America"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which river flows through Paris?",
+                        answers: ["Thames", "Seine", "Danube", "Rhine"],
+                        correct: 1
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the highest waterfall in the world?",
+                        answers: ["Niagara Falls", "Victoria Falls", "Angel Falls", "Iguazu Falls"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which country has the longest coastline?",
+                        answers: ["Australia", "Russia", "Canada", "Norway"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the capital of New Zealand?",
+                        answers: ["Auckland", "Wellington", "Christchurch", "Hamilton"],
+                        correct: 1
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which mountain range contains Mount Everest?",
+                        answers: ["Alps", "Andes", "Himalayas", "Rocky Mountains"],
+                        correct: 2
+                    },
+                    {
+                        category: "Geography",
+                        question: "What is the largest island in the world?",
+                        answers: ["Madagascar", "Greenland", "New Guinea", "Borneo"],
+                        correct: 1
+                    },
+                    {
+                        category: "Geography",
+                        question: "Which sea is the saltiest?",
+                        answers: ["Mediterranean Sea", "Red Sea", "Dead Sea", "Caspian Sea"],
+                        correct: 2
+                    },
+
+                    // Technology Questions
+                    {
+                        category: "Technology",
+                        question: "Who founded Microsoft?",
+                        answers: ["Steve Jobs", "Bill Gates", "Mark Zuckerberg", "Larry Page"],
+                        correct: 1
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'WWW' stand for?",
+                        answers: ["World Wide Web", "World Wide Website", "World Web Wide", "Wide World Web"],
+                        correct: 0
+                    },
+                    {
+                        category: "Technology",
+                        question: "In what year was the first iPhone released?",
+                        answers: ["2006", "2007", "2008", "2009"],
+                        correct: 1
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'AI' stand for in technology?",
+                        answers: ["Automated Intelligence", "Artificial Intelligence", "Advanced Intelligence", "Augmented Intelligence"],
+                        correct: 1
+                    },
+                    {
+                        category: "Technology",
+                        question: "Which company developed the Android operating system?",
+                        answers: ["Apple", "Microsoft", "Google", "Samsung"],
+                        correct: 2
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'CPU' stand for?",
+                        answers: ["Central Processing Unit", "Computer Processing Unit", "Central Program Unit", "Computer Program Unit"],
+                        correct: 0
+                    },
+                    {
+                        category: "Technology",
+                        question: "Who founded Facebook?",
+                        answers: ["Bill Gates", "Steve Jobs", "Mark Zuckerberg", "Elon Musk"],
+                        correct: 2
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'USB' stand for?",
+                        answers: ["Universal Serial Bus", "Universal System Bus", "United Serial Bus", "United System Bus"],
+                        correct: 0
+                    },
+                    {
+                        category: "Technology",
+                        question: "Which programming language is known for its use in web development?",
+                        answers: ["Python", "JavaScript", "C++", "Java"],
+                        correct: 1
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'GPS' stand for?",
+                        answers: ["Global Positioning System", "Global Positioning Service", "General Positioning System", "General Positioning Service"],
+                        correct: 0
+                    },
+                    {
+                        category: "Technology",
+                        question: "Who invented the World Wide Web?",
+                        answers: ["Bill Gates", "Steve Jobs", "Tim Berners-Lee", "Mark Zuckerberg"],
+                        correct: 2
+                    },
+                    {
+                        category: "Technology",
+                        question: "What does 'RAM' stand for in computers?",
+                        answers: ["Random Access Memory", "Read Access Memory", "Rapid Access Memory", "Real Access Memory"],
+                        correct: 0
+                    },
+                    {
+                        category: "Technology",
+                        question: "Which company created the PlayStation gaming console?",
+                        answers: ["Nintendo", "Microsoft", "Sony", "Sega"],
+                        correct: 2
+                    },
+                    {
+                        category: "Technology",
+                        question: "What is the most widely used search engine?",
+                        answers: ["Bing", "Yahoo", "Google", "DuckDuckGo"],
+                        correct: 2
+                    },
+                    {
+                        category: "Technology",
+                        question: "In what year was the first computer bug found?",
+                        answers: ["1945", "1947", "1949", "1951"],
+                        correct: 1
+                    },
+
+                    // Literature Questions
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'Romeo and Juliet'?",
+                        answers: ["Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "Which book begins with 'It was the best of times, it was the worst of times'?",
+                        answers: ["Great Expectations", "Oliver Twist", "A Tale of Two Cities", "David Copperfield"],
+                        correct: 2
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote '1984'?",
+                        answers: ["Aldous Huxley", "George Orwell", "Ray Bradbury", "Kurt Vonnegut"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "What is the first book in the Harry Potter series?",
+                        answers: ["Chamber of Secrets", "Prisoner of Azkaban", "Philosopher's Stone", "Goblet of Fire"],
+                        correct: 2
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'Pride and Prejudice'?",
+                        answers: ["Charlotte Brontë", "Emily Brontë", "Jane Austen", "George Eliot"],
+                        correct: 2
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'To Kill a Mockingbird'?",
+                        answers: ["Harper Lee", "J.D. Salinger", "John Steinbeck", "William Faulkner"],
+                        correct: 0
+                    },
+                    {
+                        category: "Literature",
+                        question: "Which novel features the character Atticus Finch?",
+                        answers: ["The Great Gatsby", "To Kill a Mockingbird", "Of Mice and Men", "The Catcher in the Rye"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'The Lord of the Rings'?",
+                        answers: ["C.S. Lewis", "J.R.R. Tolkien", "George R.R. Martin", "Terry Pratchett"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "Which Shakespeare play features the character Hamlet?",
+                        answers: ["Macbeth", "Othello", "King Lear", "Hamlet"],
+                        correct: 3
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'The Great Gatsby'?",
+                        answers: ["Ernest Hemingway", "F. Scott Fitzgerald", "John Steinbeck", "William Faulkner"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "Which book features the character Sherlock Holmes?",
+                        answers: ["The Adventures of Sherlock Holmes", "Murder on the Orient Express", "The Maltese Falcon", "The Big Sleep"],
+                        correct: 0
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'Moby Dick'?",
+                        answers: ["Mark Twain", "Herman Melville", "Nathaniel Hawthorne", "Edgar Allan Poe"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "What is the first line of 'A Tale of Two Cities'?",
+                        answers: ["Call me Ishmael", "It was the best of times", "In a hole in the ground", "All children, except one"],
+                        correct: 1
+                    },
+                    {
+                        category: "Literature",
+                        question: "Who wrote 'The Catcher in the Rye'?",
+                        answers: ["J.D. Salinger", "Harper Lee", "John Steinbeck", "Jack Kerouac"],
+                        correct: 0
+                    },
+                    {
+                        category: "Literature",
+                        question: "Which author created the character James Bond?",
+                        answers: ["John le Carré", "Ian Fleming", "Graham Greene", "Frederick Forsyth"],
+                        correct: 1
+                    },
+
+                    // Music Questions
+                    {
+                        category: "Music",
+                        question: "How many strings does a standard guitar have?",
+                        answers: ["4", "5", "6", "7"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Which composer wrote 'The Four Seasons'?",
+                        answers: ["Bach", "Mozart", "Beethoven", "Vivaldi"],
+                        correct: 3
+                    },
+                    {
+                        category: "Music",
+                        question: "What does 'forte' mean in music?",
+                        answers: ["Soft", "Loud", "Fast", "Slow"],
+                        correct: 1
+                    },
+                    {
+                        category: "Music",
+                        question: "Which Beatles album features 'Here Comes the Sun'?",
+                        answers: ["Abbey Road", "Let It Be", "White Album", "Sgt. Pepper's"],
+                        correct: 0
+                    },
+                    {
+                        category: "Music",
+                        question: "What instrument did Louis Armstrong famously play?",
+                        answers: ["Piano", "Saxophone", "Trumpet", "Drums"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Who composed 'The Magic Flute'?",
+                        answers: ["Bach", "Mozart", "Beethoven", "Haydn"],
+                        correct: 1
+                    },
+                    {
+                        category: "Music",
+                        question: "How many keys are on a standard piano?",
+                        answers: ["86", "87", "88", "89"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Which singer is known as the 'Queen of Pop'?",
+                        answers: ["Beyoncé", "Madonna", "Whitney Houston", "Mariah Carey"],
+                        correct: 1
+                    },
+                    {
+                        category: "Music",
+                        question: "What genre of music did Elvis Presley help popularize?",
+                        answers: ["Jazz", "Blues", "Rock and Roll", "Country"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Which instrument is Yo-Yo Ma famous for playing?",
+                        answers: ["Violin", "Piano", "Cello", "Viola"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Who wrote the opera 'Carmen'?",
+                        answers: ["Verdi", "Puccini", "Bizet", "Mozart"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "What does 'a cappella' mean?",
+                        answers: ["With instruments", "Without instruments", "Loud singing", "Soft singing"],
+                        correct: 1
+                    },
+                    {
+                        category: "Music",
+                        question: "Which band released the album 'Dark Side of the Moon'?",
+                        answers: ["Led Zeppelin", "Pink Floyd", "The Beatles", "Queen"],
+                        correct: 1
+                    },
+                    {
+                        category: "Music",
+                        question: "How many symphonies did Beethoven compose?",
+                        answers: ["7", "8", "9", "10"],
+                        correct: 2
+                    },
+                    {
+                        category: "Music",
+                        question: "Which country is the birthplace of reggae music?",
+                        answers: ["Cuba", "Jamaica", "Trinidad", "Barbados"],
+                        correct: 1
+                    }
+                ];
+            }
+
+            generateQuestions() {
+                // Shuffle the question bank and select questions for the current game
+                const shuffled = this.shuffleArray([...this.questionBank]);
+                this.questions = shuffled.slice(0, this.totalQuestions);
+            }
+
+            shuffleArray(array) {
+                const shuffled = [...array];
+                for (let i = shuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                }
+                return shuffled;
+            }
+
+            bindEvents() {
+                document.getElementById('startButton').addEventListener('click', () => this.startGame());
+                document.getElementById('playAgainButton').addEventListener('click', () => this.resetGame());
+                document.getElementById('nextButton').addEventListener('click', () => this.nextQuestion());
+                
+                // Answer button events
+                document.querySelectorAll('.answer-button').forEach(button => {
+                    button.addEventListener('click', (e) => this.selectAnswer(e));
+                });
+            }
+
+            startGame() {
+                document.getElementById('firstScreen').style.display = 'none';
+                document.getElementById('gameScreen').style.display = 'block';
+                this.loadQuestion();
+            }
+
+            loadQuestion() {
+                if (this.currentQuestionIndex >= this.totalQuestions) {
+                    this.endGame();
+                    return;
+                }
+
+                this.isAnswered = false;
+                const question = this.questions[this.currentQuestionIndex];
+                
+                // Update progress
+                const progress = ((this.currentQuestionIndex) / this.totalQuestions) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+                
+                // Update UI
+                document.getElementById('questionNumber').textContent = this.currentQuestionIndex + 1;
+                document.getElementById('category').textContent = question.category;
+                document.getElementById('questionText').textContent = question.question;
+                document.getElementById('feedback').textContent = '';
+                document.getElementById('nextButton').style.display = 'none';
+                
+                // Load answers
+                const answerButtons = document.querySelectorAll('.answer-button');
+                answerButtons.forEach((button, index) => {
+                    button.textContent = question.answers[index];
+                    button.classList.remove('correct', 'incorrect', 'disabled');
+                    button.disabled = false;
+                });
+            }
+
+            selectAnswer(event) {
+                if (this.isAnswered) return;
+                
+                this.isAnswered = true;
+                const selectedAnswer = parseInt(event.target.dataset.answer);
+                const correctAnswer = this.questions[this.currentQuestionIndex].correct;
+                const answerButtons = document.querySelectorAll('.answer-button');
+                
+                // Disable all buttons
+                answerButtons.forEach(button => {
+                    button.classList.add('disabled');
+                    button.disabled = true;
+                });
+                
+                // Show correct answer
+                answerButtons[correctAnswer].classList.add('correct');
+                
+                if (selectedAnswer === correctAnswer) {
+                    this.score++;
+                    document.getElementById('feedback').textContent = 'Correct! Well done!';
+                    document.getElementById('feedback').style.color = '#4caf50';
+                } else {
+                    answerButtons[selectedAnswer].classList.add('incorrect');
+                    document.getElementById('feedback').textContent = `Incorrect. The correct answer was: ${this.questions[this.currentQuestionIndex].answers[correctAnswer]}`;
+                    document.getElementById('feedback').style.color = '#f44336';
+                }
+                
+                // Update score
+                document.getElementById('score').textContent = this.score;
+                
+                // Show next button
+                setTimeout(() => {
+                    document.getElementById('nextButton').style.display = 'inline-block';
+                }, 1000);
+            }
+
+            nextQuestion() {
+                this.currentQuestionIndex++;
+                this.loadQuestion();
+            }
+
+            endGame() {
+                document.getElementById('finalScore').textContent = this.score;
+                
+                let message = '';
+                if (this.score === this.totalQuestions) {
+                    message = 'Perfect! You are a true Quiz Champion!';
+                } else if (this.score >= 8) {
+                    message = 'Excellent! You have impressive knowledge!';
+                } else if (this.score >= 6) {
+                    message = 'Good job! You did well!';
+                } else if (this.score >= 4) {
+                    message = 'Not bad! Keep learning and try again!';
+                } else {
+                    message = 'Keep studying and you\'ll improve!';
+                }
+                
+                document.getElementById('performanceMessage').textContent = message;
+                document.getElementById('gameOverModal').style.display = 'block';
+            }
+
+            resetGame() {
+                this.currentQuestionIndex = 0;
+                this.score = 0;
+                this.isAnswered = false;
+                
+                document.getElementById('score').textContent = '0';
+                document.getElementById('progressFill').style.width = '0%';
+                document.getElementById('gameOverModal').style.display = 'none';
+                document.getElementById('gameScreen').style.display = 'none';
+                document.getElementById('firstScreen').style.display = 'flex';
+                
+                // Generate new set of questions for the next game
+                this.generateQuestions();
+            }
+        }
+
+        // Initialize game when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new QuizGame();
+        });
+
+        // Prevent zoom on double tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>
